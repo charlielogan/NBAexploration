@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from basketball_reference_web_scraper import client
 from basketball_reference_web_scraper.data import Team
 from basketball_reference_web_scraper.data import OutputType
