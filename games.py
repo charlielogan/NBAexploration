@@ -1,12 +1,11 @@
-from basketball_reference_web_scraper import client
-from basketball_reference_web_scraper.data import Team
-from basketball_reference_web_scraper.data import OutputType
+from basketball_reference_web_scraper.data import Team, OutputType
 
 from nba_api.stats.static import teams
-from nba_api.stats.endpoints import teamyearbyyearstats
-from nba_api.stats.endpoints import leaguestandings
+from nba_api.stats.endpoints import teamyearbyyearstats, leaguestandings, leaguegamefinder, playbyplay
+from nba_api.stats.library.parameters import Season, SeasonType
 
 import os
+import time
 import sqlite3
 
 
@@ -15,18 +14,22 @@ class Predictor:
         self.team_dict = {}
         self.ppg = {}
         self.oppg = {}
+        self.abbrevs = {}
 
-    def get_schedule_data(self, cur, conn, endyear):
+
+    def get_schedule_data(self, cur, conn, year):
 
         nba_teams = teams.get_teams()
         for team in nba_teams:
+            
             name = team['nickname'].split()[-1].upper()
             if name == '76ERS':
                 name = 'SIXERS'
 
             self.team_dict[name] = team['id']
+            self.abbrevs[team['abbreviation']] = name
 
-        stan = leaguestandings.LeagueStandings(season=endyear-1).get_dict()
+        stan = leaguestandings.LeagueStandings(season=year).get_dict()
         for d in stan['resultSets']:
             for l in d['rowSet']:
                 name = l[4].split()[-1].upper()
@@ -37,111 +40,94 @@ class Predictor:
                 self.ppg[name] = points
                 self.oppg[name] = opoints
 
+        for team in self.team_dict:
+            cur.execute("CREATE TABLE IF NOT EXISTS " + team + "(game_ID INTEGER, game_date STRING, TO_1 INTEGER, three_m1 INTEGER, three_a1 INTEGER, ts_1 INTEGER, diff_1 INTEGER, TO_2 INTEGER, three_m2 INTEGER, three_a2 INTEGER, ts_2 INTEGER, diff_2 INTEGER, TO_3 INTEGER, three_m3 INTEGER, three_a3 INTEGER, ts_3 INTEGER, diff_3 INTEGER, ts_final INTEGER, home_ppg FLOAT, away_ppg FLOAT)")
 
-        games = client.season_schedule(season_end_year=endyear)
-        g_id = 0
-        for game in games:
-            true_day = 0
-            true_month = 0
-            true_year = 0
-            home_team1 = game['home_team']
-            home_name = home_team1.value.split()[-1]
-            home_final = game["home_team_score"]
-            if(home_name == "76ERS"):
-                home_name = "SIXERS"
-            away_team = game['away_team']
-            away_name = away_team.value.split()[-1]
-            away_final = game["away_team_score"]
-            if(away_name == "76ERS"):
-                away_name = "SIXERS"
-            date1 = game['start_time']
-            cur.execute("CREATE TABLE IF NOT EXISTS " + home_name + "(game_ID INTEGER, time_remaining INTEGER, end_minutes_played INTEGER, turnovers FLOAT, attempt_3pt FLOAT, made_3pt FLOAT, percent_3pt FLOAT, fg_made FLOAT, fg_attempt FLOAT, fg_percent FLOAT, ft_made FLOAT, ft_attempt FLOAT, ft_percent FLOAT, total_score INTEGER, score_diff INTEGER, score_rate FLOAT, final_score INTEGER, home_ppg FLOAT, home_oppg FLOAT, away_ppg FLOAT, away_oppg FLOAT)")
-            try:
-                true_day = date1.day
-                true_month = date1.month
-                true_year = date1.year
-                play_by_play = client.play_by_play(
-                        home_team=home_team1,
-                        year=date1.year,
-                        month=date1.month,
-                        day=date1.day)
+            g = leaguegamefinder.LeagueGameFinder(team_id_nullable=self.team_dict[team], season_nullable = year, season_type_nullable=SeasonType.regular)
+            games_dict = g.get_normalized_dict()
+            games = games_dict['LeagueGameFinderResults']
 
-            except:
-                try:
-                    true_day = date1.day-1
-                    true_month = date1.month
-                    true_year = date1.year
-                    play_by_play = client.play_by_play(
-                        home_team=home_team1,
-                        year=date1.year,
-                        month=date1.month,
-                        day=(date1.day - 1))
+            for game in games:
 
-                except:
-                    print(game)
+                if(game['MATCHUP'].split()[1] == '@'):
                     continue
 
-            final_score = home_final + away_final
-            end_3pt_attempt = 0
-            end_3pt_made = 0
-            end_minutes_played = 0
-            end_attempt_ft = 0
-            end_made_ft = 0
-            end_attempt_fg = 0
-            end_made_fg = 0
-            end_turnovers = 0
-            
-            box_score = client.team_box_scores(
-            year=true_year,
-            month=true_month,
-            day=true_day)
-            for box in box_score:
-                if(box['team'] == home_team1):
-                    end_3pt_attempt = box["attempted_three_point_field_goals"]
-                    end_3pt_made = box["made_three_point_field_goals"]
-                    end_minutes_played = box["minutes_played"]
-                    end_attempt_ft = box['attempted_free_throws']
-                    end_made_ft = box['made_free_throws']
-                    end_attempt_fg = box['attempted_field_goals']
-                    end_made_fg = box['made_field_goals']
-                    end_turnovers = box['turnovers']
-                    break
-                
-            for box in box_score:
-                if(box['team'] == away_team):
-                    end_3pt_attempt += box["attempted_three_point_field_goals"]
-                    end_3pt_made += box["made_three_point_field_goals"]
-                    end_attempt_ft += box['attempted_free_throws']
-                    end_made_ft += box['made_free_throws']
-                    end_attempt_fg += box['attempted_field_goals']
-                    end_made_fg += box['made_field_goals']
-                    end_turnovers += box['turnovers']
-                    break
-            
-            percent_3pt = float(end_3pt_made)/float(end_3pt_attempt)
-            fg_percent = float(end_made_fg)/float(end_attempt_fg)
-            ft_percent = float(end_made_ft)/float(end_attempt_ft)
-            i = 20
-            while(i <(len(play_by_play) - 25)):
-                    time_rem = ((4-(play_by_play[i]["period"])) * 720) + play_by_play[i]["remaining_seconds_in_period"]
-                    total_score = play_by_play[i]["away_score"] + play_by_play[i]["home_score"]
-                    score_diff = abs(play_by_play[i]["away_score"] - play_by_play[i]["home_score"])
-                    score_rate = total_score/(2880 - time_rem)
-                    turnovers = end_turnovers
-                    attempt_3pt = end_3pt_attempt
-                    made_3pt = end_3pt_made
-                    #fg_attempt = float(end_attempt_fg*(2880-time_rem))/2880
-                    fg_attempt = end_attempt_fg
-                    fg_made = end_made_fg
-                    ft_attempt = end_attempt_ft
-                    ft_made = end_made_ft
-                    
+                if game['MATCHUP'].split()[-1] not in self.abbrevs:
+                    continue
 
-                    cur.execute("INSERT INTO " + home_name + " (game_ID, time_remaining, end_minutes_played, turnovers, attempt_3pt, made_3pt, percent_3pt, fg_made, fg_attempt, fg_percent, ft_made, ft_attempt, ft_percent, total_score, score_diff, score_rate, final_score, home_ppg, home_oppg, away_ppg, away_oppg) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",(g_id, time_rem, end_minutes_played, turnovers, attempt_3pt, made_3pt, percent_3pt, fg_made, fg_attempt, fg_percent, ft_made, ft_attempt, ft_percent, total_score, score_diff, score_rate, final_score, self.ppg[home_name], self.oppg[home_name], self.ppg[away_name], self.oppg[away_name]))
-                    i+=5
-            g_id +=1
-            print(date1)
-        conn.commit()
+                   
+                to_1, three_m1, three_a1, ts_1, diff_1 = get_play_by_play_stats(1, game)
+                if ts_1 == 0:
+                    continue
+                to_2, three_m2, three_a2, ts_2, diff_2 = get_play_by_play_stats(2, game)
+                to_2 += to_1
+                three_m2 += three_m1
+                three_a2 += three_a1
+                to_3, three_m3, three_a3, ts_3, diff_3 = get_play_by_play_stats(3, game)
+                to_3 += to_2
+                three_m3 += three_m2
+                three_a3 += three_a2
+
+                final_score = game['PTS'] + (game['PTS'] - game["PLUS_MINUS"])
+
+                home_ppg = self.ppg[team]
+                home_oppg = self.oppg[team]
+                home_total = home_ppg + home_oppg
+                away_ppg = self.ppg[self.abbrevs[game['MATCHUP'].split()[-1]]]
+                away_oppg = self.oppg[self.abbrevs[game['MATCHUP'].split()[-1]]]
+                away_total = away_ppg + away_oppg
+                
+                cur.execute("INSERT INTO " + team + " (game_ID, game_date, TO_1, three_m1, three_a1, ts_1, diff_1, TO_2, three_m2, three_a2, ts_2, diff_2, TO_3, three_m3, three_a3, ts_3, diff_3, ts_final, home_ppg, away_ppg) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (game['GAME_ID'], game['GAME_DATE'], to_1, three_m1, three_a1, ts_1, diff_1, to_2, three_m2, three_a2, ts_2, diff_2, to_3, three_m3, three_a3, ts_3, diff_3, final_score, home_total, away_total))
+
+                print(game['GAME_DATE'])
+
+
+            conn.commit()
+
+def get_play_by_play_stats(quarter, game):
+        
+        turnovers = 0
+        three_attempt = 0
+        three_make = 0       
+
+        pbp = playbyplay.PlayByPlay(game['GAME_ID'], start_period=quarter, end_period=quarter)
+        time.sleep(2)
+        dic = pbp.get_normalized_dict()['PlayByPlay']
+        if len(dic) == 0:
+            return (0, 0, 0, 0, 0)
+        try:
+            for x in dic:
+                if  x['VISITORDESCRIPTION'] != None:
+
+                    if 'Turnover' in x['VISITORDESCRIPTION']:
+                        turnovers += 1
+
+                    elif '3PT' in x['VISITORDESCRIPTION']:
+                        three_attempt += 1
+                        if 'MISS' not in x['VISITORDESCRIPTION']:
+                            three_make += 1
+
+                if x['HOMEDESCRIPTION'] != None:
+
+                    if 'Turnover' in x['HOMEDESCRIPTION']:
+                        turnovers += 1
+
+                    elif '3PT' in x['HOMEDESCRIPTION']:
+                        three_attempt += 1
+                        if 'MISS' not in x['HOMEDESCRIPTION']:
+                            three_make += 1
+            
+            i = len(dic) - 1
+            while dic[i]['SCORE'] == None:
+                i -= 1
+            away_final = int(dic[i]['SCORE'].split("-")[0])
+            home_final = int(dic[i]['SCORE'].split("-")[1])
+            return (turnovers, three_make, three_attempt, away_final+home_final, abs(away_final-home_final))
+        except:
+            print("ERROR")
+            print(game)
+            print(dic)
             
 def main():
     p1 = Predictor()
@@ -154,10 +140,10 @@ def main():
         path = os.path.dirname(os.path.abspath(__file__))
         conn = sqlite3.connect(path+'/'+ "Prediction.db")
         cur = conn.cursor()
-    p1.get_schedule_data(cur, conn, 2020)
-    p1.get_schedule_data(cur, conn, 2019)
-    p1.get_schedule_data(cur, conn, 2018)
-    p1.get_schedule_data(cur, conn, 2017)
+    #p1.get_schedule_data(cur, conn, "2019-20")
+    p1.get_schedule_data(cur, conn, "2018-19")
+    p1.get_schedule_data(cur, conn, "2017-18")
+    p1.get_schedule_data(cur, conn, "2016-17")
    
 
 if __name__ == "__main__":
