@@ -4,8 +4,40 @@ import pickle
 
 ppg = {}
 oppg = {}
-abbrevs = {}
-team_dict = {}
+teams = sorted(['LAKERS',
+'BUCKS',
+'CLIPPERS',
+'RAPTORS',
+'CELTICS',
+'NUGGETS',
+'ROCKETS',
+'HEAT',
+'PACERS',
+'JAZZ',
+'SIXERS',
+'THUNDER',
+'NETS',
+'MAVERICKS',
+'MAGIC',
+'GRIZZLIES',
+'BLAZERS',
+'WIZARDS',
+'SPURS',
+'HORNETS',
+'BULLS',
+'PELICANS',
+'SUNS',
+'KNICKS',
+'KINGS',
+'PISTONS',
+'TIMBERWOLVES',
+'HAWKS',
+'CAVALIERS',
+'WARRIORS'
+])
+home = st.selectbox("Select Home Team: ", teams)
+away = st.selectbox("Select Away Team: ", teams)
+
 
 
 with open('ppg2019_20.csv', 'r', newline='') as csvfile:
@@ -24,68 +56,7 @@ with open('predict_{}.sav'.format(quarter), 'rb') as pickle_file:
 
 home_score = st.number_input("Enter home team score ", value=0, step=1)
 away_score = st.number_input("Enter away team score ", value=0, step=1)
-home = st.selectbox("Select Home Team: ", ('LAKERS',
-'BUCKS',
-'CLIPPERS',
-'RAPTORS',
-'CELTICS',
-'NUGGETS',
-'ROCKETS',
-'HEAT',
-'PACERS',
-'JAZZ',
-'SIXERS',
-'THUNDER',
-'NETS',
-'MAVERICKS',
-'MAGIC',
-'GRIZZLIES',
-'BLAZERS',
-'WIZARDS',
-'SPURS',
-'HORNETS',
-'BULLS',
-'PELICANS',
-'SUNS',
-'KNICKS',
-'KINGS',
-'PISTONS',
-'TIMBERWOLVES',
-'HAWKS',
-'CAVALIERS',
-'WARRIORS'
-))
-away = st.selectbox("Select Away Team: ", ('LAKERS',
-'BUCKS',
-'CLIPPERS',
-'RAPTORS',
-'CELTICS',
-'NUGGETS',
-'ROCKETS',
-'HEAT',
-'PACERS',
-'JAZZ',
-'SIXERS',
-'THUNDER',
-'NETS',
-'MAVERICKS',
-'MAGIC',
-'GRIZZLIES',
-'BLAZERS',
-'WIZARDS',
-'SPURS',
-'HORNETS',
-'BULLS',
-'PELICANS',
-'SUNS',
-'KNICKS',
-'KINGS',
-'PISTONS',
-'TIMBERWOLVES',
-'HAWKS',
-'CAVALIERS',
-'WARRIORS'
-))
+home = st.selectbox("Select Home Team: ", )
 
 avg_scored = (ppg[home] + ppg[away])/2
 avg_allowed = (oppg[home] + oppg[away])/2
