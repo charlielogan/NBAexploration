@@ -35,8 +35,7 @@ teams = sorted(['LAKERS',
 'CAVALIERS',
 'WARRIORS'
 ])
-home = st.selectbox("Select Home Team: ", teams)
-away = st.selectbox("Select Away Team: ", teams)
+
 
 
 
@@ -50,13 +49,15 @@ with open('ppg2019_20.csv', 'r', newline='') as csvfile:
 
 st.title("Quarterly total Predictor")
 
-quarter = option = st.selectbox("Select quarter: ", ('1', '2', '3'))
+quarter = st.selectbox("Select quarter: ", ('1', '2', '3'))
 with open('predict_{}.sav'.format(quarter), 'rb') as pickle_file:
     regression_model_2 = pickle.load(pickle_file)
 
 home_score = st.number_input("Enter home team score ", value=0, step=1)
 away_score = st.number_input("Enter away team score ", value=0, step=1)
-home = st.selectbox("Select Home Team: ", )
+
+home = st.selectbox("Select Home Team: ", teams)
+away = st.selectbox("Select Away Team: ", teams)
 
 avg_scored = (ppg[home] + ppg[away])/2
 avg_allowed = (oppg[home] + oppg[away])/2
