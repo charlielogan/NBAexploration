@@ -1,6 +1,5 @@
 import streamlit as st
-from nba_api.stats.endpoints import teamyearbyyearstats, leaguestandings, leaguegamefinder, playbyplay
-from nba_api.stats.static import teams
+
 import pickle
 
 ppg = {}
@@ -8,24 +7,14 @@ oppg = {}
 abbrevs = {}
 team_dict = {}
 
-stan = leaguestandings.LeagueStandings().get_dict()
-for d in stan['resultSets']:
-    for l in d['rowSet']:
-        name = l[4].split()[-1].upper()
-        if(name == '76ERS'):
-            name = 'SIXERS'
-        points = l[56]
-        opoints = l[57]
-        ppg[name] = points
-        oppg[name] = opoints
-        
-nba_teams = teams.get_teams()
-for team in nba_teams:
-    name = team['nickname'].split()[-1].upper()
-    if name == '76ERS':
-        name = 'SIXERS'
-    team_dict[name] = team['id']
-    abbrevs[team['abbreviation']] = name
+
+with open('ppg2019_20.csv', 'r', newline='') as csvfile:
+    rows = csvfile.readlines()
+    for row in rows:
+        spl = row.split(',')
+        teamname = spl[0]
+        ppg[teamname] = float(spl[1])
+        oppg[teamname] = float(spl[2])
 
 st.title("Quarterly total Predictor")
 
@@ -35,68 +24,71 @@ with open('predict_{}.sav'.format(quarter), 'rb') as pickle_file:
 
 home_score = st.number_input("Enter home team score ", value=0, step=1)
 away_score = st.number_input("Enter away team score ", value=0, step=1)
-home = st.selectbox("Select Home Team: ", ('ATL',
-'BKN', 
-'BOS',
-'CHA',
-'CHI',
-'CLE',
-'DAL',
-'DEN',
-'DET',
-'GSW',
-'HOU',
-'IND',
-'LAC',
-'LAL',
-'MEM',
-'MIA',
-'MIL',
-'MIN',
-'NOP',
-'NYK',
-'OKC',
-'PHI',
-'PHX',
-'POR',
-'SAC',
-'SAS',
-'TOR',
-'UTA',
-'WAS'))
-away = st.selectbox("Select Away Team: ", ('ATL',
-'BKN', 
-'BOS',
-'CHA',
-'CHI',
-'CLE',
-'DAL',
-'DEN',
-'DET',
-'GSW',
-'HOU',
-'IND',
-'LAC',
-'LAL',
-'MEM',
-'MIA',
-'MIL',
-'MIN',
-'NOP',
-'NYK',
-'OKC',
-'ORL',
-'PHI',
-'PHX',
-'POR',
-'SAC',
-'SAS',
-'TOR',
-'UTA',
-'WAS'))
+home = st.selectbox("Select Home Team: ", ('LAKERS',
+'BUCKS',
+'CLIPPERS',
+'RAPTORS',
+'CELTICS',
+'NUGGETS',
+'ROCKETS',
+'HEAT',
+'PACERS',
+'JAZZ',
+'SIXERS',
+'THUNDER',
+'NETS',
+'MAVERICKS',
+'MAGIC',
+'GRIZZLIES',
+'BLAZERS',
+'WIZARDS',
+'SPURS',
+'HORNETS',
+'BULLS',
+'PELICANS',
+'SUNS',
+'KNICKS',
+'KINGS',
+'PISTONS',
+'TIMBERWOLVES',
+'HAWKS',
+'CAVALIERS',
+'WARRIORS'
+))
+away = st.selectbox("Select Away Team: ", ('LAKERS',
+'BUCKS',
+'CLIPPERS',
+'RAPTORS',
+'CELTICS',
+'NUGGETS',
+'ROCKETS',
+'HEAT',
+'PACERS',
+'JAZZ',
+'SIXERS',
+'THUNDER',
+'NETS',
+'MAVERICKS',
+'MAGIC',
+'GRIZZLIES',
+'BLAZERS',
+'WIZARDS',
+'SPURS',
+'HORNETS',
+'BULLS',
+'PELICANS',
+'SUNS',
+'KNICKS',
+'KINGS',
+'PISTONS',
+'TIMBERWOLVES',
+'HAWKS',
+'CAVALIERS',
+'WARRIORS'
+))
 
-avg_scored = (ppg[abbrevs[home]] + ppg[abbrevs[away]])/2
-avg_allowed = (oppg[abbrevs[home]] + oppg[abbrevs[away]])/2
+avg_scored = (ppg[home] + ppg[away])/2
+avg_allowed = (oppg[home] + oppg[away])/2
 
 
 total_score = home_score + away_score

@@ -3,6 +3,32 @@ from basketball_reference_web_scraper.data import Team
 from basketball_reference_web_scraper.data import OutputType
 import csv
 from datetime import datetime, timezone
+from nba_api.stats.endpoints import teamyearbyyearstats, leaguestandings, leaguegamefinder, playbyplay
+from nba_api.stats.static import teams
+
+ppg = {}
+oppg = {}
+abbrevs = {}
+team_dict = {}
+
+stan = leaguestandings.LeagueStandings().get_dict()
+for d in stan['resultSets']:
+    for l in d['rowSet']:
+        name = l[4].split()[-1].upper()
+        if(name == '76ERS'):
+            name = 'SIXERS'
+        points = l[56]
+        opoints = l[57]
+        ppg[name] = points
+        oppg[name] = opoints
+        
+nba_teams = teams.get_teams()
+for team in nba_teams:
+    name = team['nickname'].split()[-1].upper()
+    if name == '76ERS':
+        name = 'SIXERS'
+    team_dict[name] = team['id']
+    abbrevs[team['abbreviation']] = name
 
 """
 self.teams = [(Team.ATLANTA_HAWKS, "Atlanta_Hawks"),
@@ -62,17 +88,11 @@ with open('restart.csv', 'w', newline='') as csvfile:
 g = []
 
 
-with open('restart.csv', 'w', newline='') as csvfile:
-    games = client.season_schedule(season_end_year=2020)
-    g_id = 0
-    for game in games:
-        if game['start_time'].month > 6 and game['start_time'].month < 10:
-            home_team = game['home_team'].name
-            away_team = game['away_team'].name
-            date1 = game['start_time']
-            row = [date1, away_team, home_team]
-            writer = csv.writer(csvfile)
-            writer.writerow(row)
+with open('ppg2019_20.csv', 'w', newline='') as csvfile:
+    writer = csv.writer(csvfile)
+    for key in ppg.keys():
+        row = [key, ppg[key], oppg[key]]
+        writer.writerow(row)
 
 
 
