@@ -41,7 +41,7 @@ class Predictor:
                 self.oppg[name] = opoints
 
         for team in self.team_dict:
-            cur.execute("CREATE TABLE IF NOT EXISTS " + team + "(game_ID INTEGER, game_date STRING, TO_1 INTEGER, three_m1 INTEGER, three_a1 INTEGER, ts_1 INTEGER, diff_1 INTEGER, TO_2 INTEGER, three_m2 INTEGER, three_a2 INTEGER, ts_2 INTEGER, diff_2 INTEGER, TO_3 INTEGER, three_m3 INTEGER, three_a3 INTEGER, ts_3 INTEGER, diff_3 INTEGER, ts_final INTEGER, home_ppg FLOAT, away_ppg FLOAT)")
+            cur.execute("CREATE TABLE IF NOT EXISTS " + team + "(game_ID INTEGER, game_date STRING, TO_1 INTEGER, three_m1 INTEGER, three_a1 INTEGER, ts_1 INTEGER, diff_1 INTEGER, TO_2 INTEGER, three_m2 INTEGER, three_a2 INTEGER, ts_2 INTEGER, diff_2 INTEGER, TO_3 INTEGER, three_m3 INTEGER, three_a3 INTEGER, ts_3 INTEGER, diff_3 INTEGER, ts_final INTEGER, home_ppg FLOAT, home_oppg FLOAT, away_ppg FLOAT, away_oppg FLOAT)")
 
             g = leaguegamefinder.LeagueGameFinder(team_id_nullable=self.team_dict[team], season_nullable = year, season_type_nullable=SeasonType.regular)
             games_dict = g.get_normalized_dict()
@@ -55,32 +55,34 @@ class Predictor:
                 if game['MATCHUP'].split()[-1] not in self.abbrevs:
                     continue
 
-                   
-                to_1, three_m1, three_a1, ts_1, diff_1 = get_play_by_play_stats(1, game)
-                if ts_1 == 0:
-                    continue
-                to_2, three_m2, three_a2, ts_2, diff_2 = get_play_by_play_stats(2, game)
-                to_2 += to_1
-                three_m2 += three_m1
-                three_a2 += three_a1
-                to_3, three_m3, three_a3, ts_3, diff_3 = get_play_by_play_stats(3, game)
-                to_3 += to_2
-                three_m3 += three_m2
-                three_a3 += three_a2
+                try:
+                    to_1, three_m1, three_a1, ts_1, diff_1 = get_play_by_play_stats(1, game)
+                    if ts_1 == 0:
+                        continue
+                    to_2, three_m2, three_a2, ts_2, diff_2 = get_play_by_play_stats(2, game)
+                    to_2 += to_1
+                    three_m2 += three_m1
+                    three_a2 += three_a1
+                    to_3, three_m3, three_a3, ts_3, diff_3 = get_play_by_play_stats(3, game)
+                    to_3 += to_2
+                    three_m3 += three_m2
+                    three_a3 += three_a2
 
-                final_score = game['PTS'] + (game['PTS'] - game["PLUS_MINUS"])
+                    final_score = game['PTS'] + (game['PTS'] - game["PLUS_MINUS"])
 
-                home_ppg = self.ppg[team]
-                home_oppg = self.oppg[team]
-                home_total = home_ppg + home_oppg
-                away_ppg = self.ppg[self.abbrevs[game['MATCHUP'].split()[-1]]]
-                away_oppg = self.oppg[self.abbrevs[game['MATCHUP'].split()[-1]]]
-                away_total = away_ppg + away_oppg
-                
-                cur.execute("INSERT INTO " + team + " (game_ID, game_date, TO_1, three_m1, three_a1, ts_1, diff_1, TO_2, three_m2, three_a2, ts_2, diff_2, TO_3, three_m3, three_a3, ts_3, diff_3, ts_final, home_ppg, away_ppg) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                    (game['GAME_ID'], game['GAME_DATE'], to_1, three_m1, three_a1, ts_1, diff_1, to_2, three_m2, three_a2, ts_2, diff_2, to_3, three_m3, three_a3, ts_3, diff_3, final_score, home_total, away_total))
+                    home_ppg = self.ppg[team]
+                    home_oppg = self.oppg[team]
+                    
+                    away_ppg = self.ppg[self.abbrevs[game['MATCHUP'].split()[-1]]]
+                    away_oppg = self.oppg[self.abbrevs[game['MATCHUP'].split()[-1]]]
+                    
+                    cur.execute("INSERT INTO " + team + " (game_ID, game_date, TO_1, three_m1, three_a1, ts_1, diff_1, TO_2, three_m2, three_a2, ts_2, diff_2, TO_3, three_m3, three_a3, ts_3, diff_3, ts_final, home_ppg, home_oppg, away_ppg, away_oppg) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        (game['GAME_ID'], game['GAME_DATE'], to_1, three_m1, three_a1, ts_1, diff_1, to_2, three_m2, three_a2, ts_2, diff_2, to_3, three_m3, three_a3, ts_3, diff_3, final_score, home_ppg, home_oppg, away_ppg, away_oppg))
 
-                print(game['GAME_DATE'])
+                    print(game['GAME_DATE'])
+                    time.sleep(2)
+                except:
+                    print(game)
 
 
             conn.commit()
@@ -90,8 +92,13 @@ def get_play_by_play_stats(quarter, game):
         turnovers = 0
         three_attempt = 0
         three_make = 0       
-
-        pbp = playbyplay.PlayByPlay(game['GAME_ID'], start_period=quarter, end_period=quarter)
+        try:
+            pbp = playbyplay.PlayByPlay(game['GAME_ID'], start_period=quarter, end_period=quarter)
+        except: 
+            print("ERROR")
+            print(quarter)
+            print(game)
+            return
         time.sleep(2)
         dic = pbp.get_normalized_dict()['PlayByPlay']
         if len(dic) == 0:
