@@ -41,7 +41,7 @@ teams = sorted(['LAKERS',
 
 
 
-with open('ppg2019_20.csv', 'r', newline='') as csvfile:
+with open('../data/ppg2019_20.csv', 'r', newline='') as csvfile:
     rows = csvfile.readlines()
     for row in rows:
         spl = row.split(',')
@@ -52,7 +52,7 @@ with open('ppg2019_20.csv', 'r', newline='') as csvfile:
 st.title("Quarterly total Predictor")
 
 quarter = st.selectbox("Select quarter: ", ('1', '2', '3'))
-with open('predict_{}.sav'.format(quarter), 'rb') as pickle_file:
+with open('../Models/predict_{}.sav'.format(quarter), 'rb') as pickle_file:
     regression_model_2 = pickle.load(pickle_file)
 
 home_score = st.number_input("Enter home team score ", value=0, step=1)
