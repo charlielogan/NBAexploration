@@ -88,7 +88,7 @@ with open('restart.csv', 'w', newline='') as csvfile:
 g = []
 
 
-with open('ppg2019_20.csv', 'w', newline='') as csvfile:
+with open('../data/ppg2019_20.csv', 'w', newline='') as csvfile:
     writer = csv.writer(csvfile)
     for key in ppg.keys():
         row = [key, ppg[key], oppg[key]]

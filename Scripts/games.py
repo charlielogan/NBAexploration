@@ -140,12 +140,12 @@ def main():
     p1 = Predictor()
     try:
         path = os.path.dirname(os.path.abspath(__file__))
-        f = open(path + "/Prediction.db")
+        f = open(path + "data/Prediction.db")
         conn = sqlite3.connect(f)
         cur = conn.cursor()
     except:
         path = os.path.dirname(os.path.abspath(__file__))
-        conn = sqlite3.connect(path+'/'+ "Prediction.db")
+        conn = sqlite3.connect(path+'/'+ "data/Prediction.db")
         cur = conn.cursor()
     #p1.get_schedule_data(cur, conn, "2019-20")
     p1.get_schedule_data(cur, conn, "2018-19")
