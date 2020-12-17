@@ -41,7 +41,7 @@ class Predictor:
                 self.oppg[name] = opoints
 
         for team in self.team_dict:
-            cur.execute("CREATE TABLE IF NOT EXISTS " + team + "(game_ID INTEGER, game_date STRING, TO_1 INTEGER, three_m1 INTEGER, three_a1 INTEGER, ts_1 INTEGER, diff_1 INTEGER, TO_2 INTEGER, three_m2 INTEGER, three_a2 INTEGER, ts_2 INTEGER, diff_2 INTEGER, TO_3 INTEGER, three_m3 INTEGER, three_a3 INTEGER, ts_3 INTEGER, diff_3 INTEGER, ts_final INTEGER, home_ppg FLOAT, home_oppg FLOAT, away_ppg FLOAT, away_oppg FLOAT)")
+            cur.execute("CREATE TABLE IF NOT EXISTS " + team + "(game_ID INTEGER, game_date STRING, home_team STRING, away_team STRING, TO_1 INTEGER, three_m1 INTEGER, three_a1 INTEGER, ts_1 INTEGER, diff_1 INTEGER, TO_2 INTEGER, three_m2 INTEGER, three_a2 INTEGER, ts_2 INTEGER, diff_2 INTEGER, TO_3 INTEGER, three_m3 INTEGER, three_a3 INTEGER, ts_3 INTEGER, diff_3 INTEGER, ts_final INTEGER, home_ppg FLOAT, home_oppg FLOAT, away_ppg FLOAT, away_oppg FLOAT)")
 
             g = leaguegamefinder.LeagueGameFinder(team_id_nullable=self.team_dict[team], season_nullable = year, season_type_nullable=SeasonType.regular)
             games_dict = g.get_normalized_dict()
@@ -60,24 +60,19 @@ class Predictor:
                     if ts_1 == 0:
                         continue
                     to_2, three_m2, three_a2, ts_2, diff_2 = get_play_by_play_stats(2, game)
-                    to_2 += to_1
-                    three_m2 += three_m1
-                    three_a2 += three_a1
                     to_3, three_m3, three_a3, ts_3, diff_3 = get_play_by_play_stats(3, game)
-                    to_3 += to_2
-                    three_m3 += three_m2
-                    three_a3 += three_a2
 
                     final_score = game['PTS'] + (game['PTS'] - game["PLUS_MINUS"])
 
                     home_ppg = self.ppg[team]
                     home_oppg = self.oppg[team]
                     
-                    away_ppg = self.ppg[self.abbrevs[game['MATCHUP'].split()[-1]]]
-                    away_oppg = self.oppg[self.abbrevs[game['MATCHUP'].split()[-1]]]
+                    away_team = self.abbrevs[game['MATCHUP'].split()[-1]]
+                    away_ppg = self.ppg[away_team]
+                    away_oppg = self.oppg[away_team]
                     
-                    cur.execute("INSERT INTO " + team + " (game_ID, game_date, TO_1, three_m1, three_a1, ts_1, diff_1, TO_2, three_m2, three_a2, ts_2, diff_2, TO_3, three_m3, three_a3, ts_3, diff_3, ts_final, home_ppg, home_oppg, away_ppg, away_oppg) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                        (game['GAME_ID'], game['GAME_DATE'], to_1, three_m1, three_a1, ts_1, diff_1, to_2, three_m2, three_a2, ts_2, diff_2, to_3, three_m3, three_a3, ts_3, diff_3, final_score, home_ppg, home_oppg, away_ppg, away_oppg))
+                    cur.execute("INSERT INTO " + team + " (game_ID, game_date, home_team, away_team, TO_1, three_m1, three_a1, ts_1, diff_1, TO_2, three_m2, three_a2, ts_2, diff_2, TO_3, three_m3, three_a3, ts_3, diff_3, ts_final, home_ppg, home_oppg, away_ppg, away_oppg) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        (game['GAME_ID'], game['GAME_DATE'], team, away_team, to_1, three_m1, three_a1, ts_1, diff_1, to_2, three_m2, three_a2, ts_2, diff_2, to_3, three_m3, three_a3, ts_3, diff_3, final_score, home_ppg, home_oppg, away_ppg, away_oppg))
 
                     print(game['GAME_DATE'])
                     time.sleep(2)
@@ -98,7 +93,7 @@ def get_play_by_play_stats(quarter, game):
             print("ERROR")
             print(quarter)
             print(game)
-            return
+            return (0, 0, 0, 0, 0)
         time.sleep(2)
         dic = pbp.get_normalized_dict()['PlayByPlay']
         if len(dic) == 0:
@@ -139,19 +134,20 @@ def get_play_by_play_stats(quarter, game):
 def main():
     p1 = Predictor()
     try:
-        path = os.path.dirname(os.path.abspath(__file__))
-        f = open(path + "data/Prediction.db")
+        f = open("../data/Prediction.db")
         conn = sqlite3.connect(f)
         cur = conn.cursor()
     except:
-        path = os.path.dirname(os.path.abspath(__file__))
-        conn = sqlite3.connect(path+'/'+ "data/Prediction.db")
+        conn = sqlite3.connect("../data/Prediction.db")
         cur = conn.cursor()
-    #p1.get_schedule_data(cur, conn, "2019-20")
+
+    p1.get_schedule_data(cur, conn, "2019-20")
     p1.get_schedule_data(cur, conn, "2018-19")
     p1.get_schedule_data(cur, conn, "2017-18")
     p1.get_schedule_data(cur, conn, "2016-17")
-   
+    p1.get_schedule_data(cur, conn, "2015-16")
+    p1.get_schedule_data(cur, conn, "2014-15")
+    p1.get_schedule_data(cur, conn, "2013-14")   
 
 if __name__ == "__main__":
     main()

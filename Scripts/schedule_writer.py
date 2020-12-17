@@ -11,7 +11,8 @@ oppg = {}
 abbrevs = {}
 team_dict = {}
 
-stan = leaguestandings.LeagueStandings().get_dict()
+# CHANGE YEAR
+stan = leaguestandings.LeagueStandings(season=2019).get_dict()
 for d in stan['resultSets']:
     for l in d['rowSet']:
         name = l[4].split()[-1].upper()
@@ -88,7 +89,7 @@ with open('restart.csv', 'w', newline='') as csvfile:
 g = []
 
 
-with open('../data/ppg2019_20.csv', 'w', newline='') as csvfile:
+with open('../data/ppg_avgs.csv', 'w', newline='') as csvfile:
     writer = csv.writer(csvfile)
     for key in ppg.keys():
         row = [key, ppg[key], oppg[key]]
