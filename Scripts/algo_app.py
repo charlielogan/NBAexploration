@@ -49,7 +49,6 @@ eastern = list(map(utc_to_local, sched))
 now_est = datetime.now(timezone(-timedelta(hours=5)))
 #todays_games = list(filter(lambda x: (x['start_time'].month == now_est.month) and (x['start_time'].day == now_est.day), eastern))
 todays_games = list(filter(lambda x: (x['start_time'].month == 12) and (x['start_time'].day == 25), eastern))
-print(todays_games)
 homes = []
 aways = []
 for game in todays_games:
@@ -57,6 +56,7 @@ for game in todays_games:
     aways.append(game['away_team'].name)
 
 todays_games = list(zip(homes, aways))
+map(lambda x: x[0] + " @ " + x[1], todays_games)
 
 with open('../data/ppg_avgs.csv', 'r', newline='') as csvfile:
     rows = csvfile.readlines()
@@ -69,6 +69,8 @@ with open('../data/ppg_avgs.csv', 'r', newline='') as csvfile:
 st.title("Quarterly total Predictor")
 
 game = st.selectbox("Select game: ", todays_games)
+away = game.split(" @ ")[0]
+home = game.split(" @ ")[1]
 
 quarter = st.selectbox("Select quarter: ", ('1', '2', '3'))
 with open('../Models/predict_{}.sav'.format(quarter), 'rb') as pickle_file:
