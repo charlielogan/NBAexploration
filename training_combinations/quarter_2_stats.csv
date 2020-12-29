@@ -1,0 +1,9 @@
+features,mse,mae,rmse,r2,notes
+"['TO_2', 'percent_3pt_2', 'ts_2', 'diff_2', 'ts_final', 'home_ppg', 'home_oppg', 'away_ppg', 'away_oppg', 'avg_points_scored', 'avg_points_allowed']",166.7909482,10.03830998,12.91475699,0.611372919,
+"['TO_2', 'percent_3pt_2', 'ts_2', 'ts_final', 'avg_points_scored', 'avg_points_allowed']",167.1332337,10.03855991,12.92800192,0.610575385,
+"['percent_3pt_2', 'ts_2', 'ts_final', 'avg_points_scored', 'avg_points_allowed']",167.1034571,10.04275078,12.92685024,0.610644765,
+"['ts_2', 'ts_final', 'avg_points_scored', 'avg_points_allowed']",166.4199338,10.00149141,12.90038503,0.612237392,
+"['ts_2', 'ts_final', 'avg_points_scored', 'avg_points_allowed']",193.8827912,10.79193354,13.92418009,0.581915846,Starting with 2014-15 season
+"['ts_2', 'ts_final', 'avg_points_scored', 'avg_points_allowed']",206.1147491,11.02791695,14.35669701,0.57833391,Starting with 2015-16 season
+"['ts_2', 'ts_final', 'avg_points_scored', 'avg_points_allowed']",159.2195632,9.998408956,12.61822346,0.578732489,Within 2 standard deviations in either direction
+"['ts_2', 'ts_final', 'avg_points_scored', 'avg_points_allowed']",177.4251352,10.29195244,13.32010267,0.57039244,Within 3 standard deviations in either direction

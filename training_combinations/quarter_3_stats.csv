@@ -1,0 +1,3 @@
+features,mse,mae,rmse,r2,notes
+"['TO_3', 'percent_3pt', 'diff_3', 'ts_3', 'avg_points_scored', 'avg_points_allowed', 'ts_final']",94.92597956112724,7.561333293113749,9.742996436473085,0.7788200933548265,
+"['diff_3', 'ts_3', 'avg_points_scored', 'avg_points_allowed', 'ts_final']",94.788657398019,7.561359572093988,9.735946661625617,0.7791400574295405,

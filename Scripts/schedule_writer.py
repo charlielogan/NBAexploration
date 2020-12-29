@@ -12,7 +12,7 @@ abbrevs = {}
 team_dict = {}
 
 # CHANGE YEAR
-stan = leaguestandings.LeagueStandings(season=2019).get_dict()
+stan = leaguestandings.LeagueStandings(season=2020).get_dict()
 for d in stan['resultSets']:
     for l in d['rowSet']:
         name = l[4].split()[-1].upper()
